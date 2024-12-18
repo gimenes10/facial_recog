@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captura de Foto com Webcam</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Captura de Foto com Webcam</h1>
+    
+    <!-- Video Feed -->
+    <video id="video" width="640" height="480" autoplay></video>
+    
+    <!-- Canvas para capturar a imagem -->
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <!-- Botão para Capturar Foto -->
+    <button id="capture">Capturar Foto</button>
+
+    <!-- Imagem Capturada que ficará congelada -->
+    <img id="captured-image" style="display:none; max-width: 640px; margin-top: 20px; border: 2px solid #ddd;" />
+
+    <!-- Contêiner com botões de "Salvar" e "Cancelar" -->
+    <div id="action-buttons" style="display:none;">
+        <button id="save-button">Salvar Foto</button>
+        <button id="cancel-button">Cancelar</button>
+    </div>
+
+    <!-- Formulário para enviar a foto capturada -->
+    <form id="photo-form" action="/take_photo" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="image" id="image-data">
+        <input type="submit" value="Salvar Foto" id="submit-button" style="display:none;">
+    </form>
+
+    <!-- Botão Voltar para voltar à página inicial -->
+    <a href="/">
+        <button id="back-button">Voltar para a Home</button>
+    </a>
+
+    <script>
+        const video = document.getElementById('video');
+        const captureButton = document.getElementById('capture');
+        const actionButtons = document.getElementById('action-buttons');
+        const saveButton = document.getElementById('save-button');
+        const cancelButton = document.getElementById('cancel-button');
+        const canvas = document.getElementById('canvas');
+        const imageDataField = document.getElementById('image-data');
+        const submitButton = document.getElementById('submit-button');
+        const capturedImage = document.getElementById('captured-image');
+
+        let stream;
+
+        // Acessar a webcam do usuário
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((mediaStream) => {
+                stream = mediaStream;
+                video.srcObject = mediaStream;
+            })
+            .catch((err) => {
+                console.log("Erro ao acessar a câmera: ", err);
+            });
+
+        // Captura a imagem ao clicar no botão
+        captureButton.addEventListener('click', () => {
+            // Desenhar a imagem do vídeo no canvas
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Converter a imagem do canvas para base64
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            // Colocar a imagem no campo escondido do formulário
+            imageDataField.value = imageData;
+
+            // Exibir a imagem capturada (congelada)
+            capturedImage.src = imageData;
+            capturedImage.style.display = 'block';
+            
+            // Mostrar os botões de salvar e cancelar
+            actionButtons.style.display = 'block';
+            captureButton.style.display = 'none';
+
+            // Parar a webcam após captura
+            stream.getTracks().forEach(track => track.stop());
+            video.style.display = 'none'; // Ocultar o vídeo após captura
+        });
+
+        // Salva a imagem e envia para o servidor
+        saveButton.addEventListener('click', () => {
+            submitButton.style.display = 'inline-block';
+            submitButton.click(); // Submeter o formulário automaticamente
+        });
+
+        // Cancela a captura e volta para a tela inicial
+        cancelButton.addEventListener('click', () => {
+            actionButtons.style.display = 'none';
+            captureButton.style.display = 'inline-block';
+            capturedImage.style.display = 'none'; // Esconder a imagem congelada
+            video.style.display = 'block'; // Mostrar o vídeo novamente
+            stream = null; // Liberar o stream
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((mediaStream) => {
+                    stream = mediaStream;
+                    video.srcObject = mediaStream;
+                })
+                .catch((err) => {
+                    console.log("Erro ao acessar a câmera: ", err);
+                });
+        });
+    </script>
+</body>
+</html>

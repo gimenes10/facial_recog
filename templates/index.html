@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de Imagem</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Faça Upload ou Capture uma Imagem</h1>
+    <div class="container">
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <label for="file">Escolha uma imagem para fazer o upload:</label>
+            <input type="file" name="file" id="file" required>
+            <button type="submit">Upload</button>
+        </form>
+        <a href="/webcam"><button>Capturar Foto</button></a>
+    </div>
+</body>
+</html>

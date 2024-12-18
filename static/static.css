@@ -1,0 +1,112 @@
+/* Resetando margens e preenchimentos padrão para garantir que o layout seja consistente */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Corpo do site */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Título principal */
+h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+    padding: 0 20px;
+}
+
+/* Estilo para a imagem */
+img {
+    max-width: 90%;
+    height: auto;
+    border: 5px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Botão Voltar */
+button {
+    font-size: 1.1rem;
+    background-color: #3498db;
+    color: #fff;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+    margin-top: 20px;
+    font-weight: 600;
+}
+
+/* Efeito ao passar o mouse sobre os botões */
+button:hover {
+    background-color: #2980b9;
+    transform: translateY(-3px);
+}
+
+/* Estilo do formulário e seus botões */
+#action-buttons {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-top: 30px;
+}
+
+#action-buttons button {
+    font-size: 1.2rem;
+    padding: 15px 40px;
+    background-color: #2ecc71;
+    border: none;
+    color: #fff;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+#action-buttons button:hover {
+    background-color: #27ae60;
+    transform: translateY(-3px);
+}
+
+/* Botão Cancelar com cor diferente */
+#cancel-button {
+    background-color: #e74c3c;
+}
+
+#cancel-button:hover {
+    background-color: #c0392b;
+}
+
+/* Ajustes para o layout em telas pequenas */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+
+    img {
+        max-width: 100%;
+    }
+
+    #action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #action-buttons button {
+        margin-bottom: 20px;
+    }
+}
