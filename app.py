@@ -21,12 +21,13 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 PREDICTOR_PATH = "shape_predictor_68_face_landmarks_GTX.dat"
 FACE_RECOGNITION_MODEL_PATH = "dlib_face_recognition_resnet_model_v1.dat"
 
-# Inicializando o detector, preditor e modelo
+# Inicializando o detector, preditor e modelo de reconhecimento facial
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(PREDICTOR_PATH)
 face_recognition_model = dlib.face_recognition_model_v1(FACE_RECOGNITION_MODEL_PATH)
 
-EUCLIDEAN_THRESHOLD = 0.5  # Threshold para considerar mesma pessoa
+# Threshold para considerar as faces como iguais
+EUCLIDEAN_THRESHOLD = 0.5  # se a distância for menor que esse valor, consideramos que é a mesma pessoa
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -47,6 +48,21 @@ def get_face_embedding(image_path):
 def compare_embeddings_euclidean(embedding1, embedding2):
     return np.linalg.norm(embedding1 - embedding2)
 
+def similarity_percentage(distance, min_d=0.3, max_d=0.6):
+    """
+    Converte a distância euclidiana em uma porcentagem de similaridade.
+    Se a distância for menor que min_d, retorna 100%.
+    Se for maior que max_d, retorna 0%.
+    Caso contrário, faz uma interpolação linear.
+    """
+    if distance < min_d:
+        return 100.0
+    elif distance > max_d:
+        return 0.0
+    else:
+        return (1 - (distance - min_d) / (max_d - min_d)) * 100
+
+# Funções de banco de dados (exemplo com SQLite)
 def init_db():
     conn = sqlite3.connect('app.db')
     cursor = conn.cursor()
@@ -93,12 +109,8 @@ def user_exists(cpf):
 
 def insert_user(nome, cpf, foto_path, embedding):
     if user_exists(cpf):
-        # Se CPF já existe, não insere e lança exceção ou retorna um erro
         raise ValueError(f"CPF {cpf} já cadastrado no banco de dados.")
-
-    embedding_list = embedding.tolist()
-    embedding_json = json.dumps(embedding_list)
-
+    embedding_json = json.dumps(embedding.tolist())
     conn = sqlite3.connect('app.db')
     cursor = conn.cursor()
     cursor.execute("INSERT INTO usuarios (nome, cpf, foto_path, embedding) VALUES (?, ?, ?, ?)",
@@ -107,7 +119,6 @@ def insert_user(nome, cpf, foto_path, embedding):
     conn.close()
 
 def delete_user(cpf):
-    # Deleta o usuário com o CPF especificado
     conn = sqlite3.connect('app.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM usuarios WHERE cpf = ?", (cpf,))
@@ -127,7 +138,7 @@ def recognize_user(new_embedding):
                 recognized_user = user
             else:
                 recognized_user = None
-    return recognized_user
+    return recognized_user, min_distance
 
 @app.route('/')
 def index():
@@ -147,12 +158,13 @@ def upload_image():
         if new_image_embedding is None:
             return "Não foi possível detectar um rosto na imagem enviada."
 
-        recognized_user = recognize_user(new_image_embedding)
+        recognized_user, distance = recognize_user(new_image_embedding)
+        sim_percent = similarity_percentage(distance)
 
         if recognized_user:
-            result = f"Rosto reconhecido: {recognized_user['nome']}"
+            result = f"Rosto reconhecido: {recognized_user['nome']} - Similaridade: {sim_percent:.1f}%"
         else:
-            result = "Pessoa não encontrada no banco de dados."
+            result = f"Pessoa não encontrada no banco de dados - Similaridade: {sim_percent:.1f}%"
 
         return render_template('uploaded_image.html', filename=filename, result=result)
     return 'Arquivo inválido'
@@ -178,12 +190,13 @@ def take_photo():
         if new_image_embedding is None:
             return "Não foi possível detectar um rosto na imagem capturada."
 
-        recognized_user = recognize_user(new_image_embedding)
+        recognized_user, distance = recognize_user(new_image_embedding)
+        sim_percent = similarity_percentage(distance)
 
         if recognized_user:
-            result = f"Rosto reconhecido: {recognized_user['nome']}"
+            result = f"Rosto reconhecido: {recognized_user['nome']} - Similaridade: {sim_percent:.1f}%"
         else:
-            result = "Pessoa não encontrada no banco de dados."
+            result = f"Pessoa não encontrada no banco de dados - Similaridade: {sim_percent:.1f}%"
 
         return render_template('uploaded_image.html', filename=filename, result=result)
     return 'Erro ao capturar a imagem'
@@ -204,6 +217,5 @@ def list_users():
 if __name__ == '__main__':
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
-
     init_db()
     app.run(debug=True)

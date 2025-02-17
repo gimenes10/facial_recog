@@ -35,3 +35,15 @@ if __name__ == "__main__":
     foto = "static/uploads/base_image2.jpg"  # Ajuste para o caminho da imagem do usuário
     
     register_user(nome, cpf, foto)
+
+    nome = "Luiz Casella"
+    cpf = "12345678902"
+    foto = "static/uploads/base_image3.jpg"  # Ajuste para o caminho da imagem do usuário
+    
+    register_user(nome, cpf, foto)
+
+    nome = "João Pedro (Val)"
+    cpf = "12345678903"
+    foto = "static/uploads/base_image4.jpg"  # Ajuste para o caminho da imagem do usuário
+    
+    register_user(nome, cpf, foto)
