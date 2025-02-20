@@ -1,10 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 import os
-import cv2
-import dlib
+import face_recognition
 import numpy as np
 import base64
-from scipy.spatial.distance import euclidean
 from werkzeug.utils import secure_filename
 from io import BytesIO
 from PIL import Image
@@ -13,37 +11,29 @@ import json
 
 app = Flask(__name__)
 
-# Definir o caminho para a pasta `static/uploads`
+# Configurações da aplicação
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 
-# Caminho dos arquivos do modelo de predição de landmarks e reconhecimento facial
-PREDICTOR_PATH = "shape_predictor_68_face_landmarks_GTX.dat"
-FACE_RECOGNITION_MODEL_PATH = "dlib_face_recognition_resnet_model_v1.dat"
-
-# Inicializando o detector, preditor e modelo de reconhecimento facial
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(PREDICTOR_PATH)
-face_recognition_model = dlib.face_recognition_model_v1(FACE_RECOGNITION_MODEL_PATH)
-
-# Threshold para considerar as faces como iguais
-EUCLIDEAN_THRESHOLD = 0.5  # se a distância for menor que esse valor, consideramos que é a mesma pessoa
+# Limiar para considerar as faces como iguais (ajustável)
+EUCLIDEAN_THRESHOLD = 0.5
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def get_face_embedding(image_path):
-    img = cv2.imread(image_path)
-    if img is None:
+    # Carrega a imagem utilizando a biblioteca face_recognition
+    image = face_recognition.load_image_file(image_path)
+    # Detecta as faces usando o modelo CNN interno (se disponível)
+    face_locations = face_recognition.face_locations(image, model="cnn")
+    if len(face_locations) == 0:
         return None
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = detector(gray)
-    if len(faces) == 0:
+    # Calcula os embeddings para as faces detectadas
+    face_encodings = face_recognition.face_encodings(image, face_locations)
+    if len(face_encodings) == 0:
         return None
-    face = faces[0]
-    landmarks = predictor(gray, face)
-    face_descriptor = np.array(face_recognition_model.compute_face_descriptor(img, landmarks))
-    return face_descriptor
+    # Retorna o primeiro embedding encontrado
+    return face_encodings[0]
 
 def compare_embeddings_euclidean(embedding1, embedding2):
     return np.linalg.norm(embedding1 - embedding2)
@@ -53,7 +43,7 @@ def similarity_percentage(distance, min_d=0.3, max_d=0.6):
     Converte a distância euclidiana em uma porcentagem de similaridade.
     Se a distância for menor que min_d, retorna 100%.
     Se for maior que max_d, retorna 0%.
-    Caso contrário, faz uma interpolação linear.
+    Caso contrário, realiza interpolação linear.
     """
     if distance < min_d:
         return 100.0
@@ -62,7 +52,7 @@ def similarity_percentage(distance, min_d=0.3, max_d=0.6):
     else:
         return (1 - (distance - min_d) / (max_d - min_d)) * 100
 
-# Funções de banco de dados (exemplo com SQLite) utilizando app3.db
+# Funções de banco de dados utilizando SQLite (banco app3.db)
 def init_db():
     conn = sqlite3.connect('app3.db')
     cursor = conn.cursor()
