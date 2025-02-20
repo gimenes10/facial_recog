@@ -1,5 +1,8 @@
 import os
 from app import get_face_embedding, insert_user, delete_user, init_db
+from app2 import get_face_embedding, insert_user, init_db
+from app3 import get_face_embedding, insert_user, init_db
+
 
 def register_user(nome, cpf, foto_path):
     # Verifica se a imagem existe
